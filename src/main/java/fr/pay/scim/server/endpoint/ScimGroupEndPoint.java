@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
-import fr.pay.scim.server.endpoint.entity.user.ScimUser;
+import fr.pay.scim.server.endpoint.entity.group.ScimGroup;
 import fr.pay.scim.server.endpoint.exception.ScimException;
 import fr.pay.scim.server.endpoint.exception.ScimNotImplementedException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,8 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @Slf4j
-@RequestMapping("/scim/v2/Users")
-public class ScimUserEndPoint {
+@RequestMapping("/scim/v2/Groups")
+public class ScimGroupEndPoint {
 
     // ========================================================
 	// = CRUD
@@ -39,88 +39,87 @@ public class ScimUserEndPoint {
 	// - POST : ""
 	// ----------------------------------------------------------------------------
 	
-	@Operation(summary = "Creating of a user")
+	@Operation(summary = "Creating a group")
 	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "201", description = "The user is created.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimUser.class))}),
-			@ApiResponse(responseCode = "409", description = "User already exists.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
+			@ApiResponse(responseCode = "201", description = "The group is created.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimGroup.class))}),
+			@ApiResponse(responseCode = "409", description = "Group already exists.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
 			})
 	@PostMapping("")
-	public ResponseEntity<ScimUser> create(
-			@RequestBody @Validated ScimUser scimUser,
+	public ResponseEntity<ScimGroup> create(
+			@RequestBody @Validated ScimGroup scimGroup,
 			HttpServletRequest request
 			) throws ScimException {
 
-		log.info("Demande de création de compte : {}", scimUser);
+		log.info("Demande de création d'un groupe : {}", scimGroup);
 
         throw new ScimNotImplementedException("En attente d'implémentation");
 	}
-	
-	
+
+ 	
 	// ----------------------------------------------------------------------------
 	// - GET : "/{id}"
 	// ----------------------------------------------------------------------------
-
 	
-	@Operation(summary = "Search for a user")
+	@Operation(summary = "Search for a group")
 	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "200", description = "The user is found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimUser.class))}),
-			@ApiResponse(responseCode = "404", description = "User not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
+			@ApiResponse(responseCode = "200", description = "The group is found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimGroup.class))}),
+			@ApiResponse(responseCode = "404", description = "Group not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
 	})
 	@GetMapping("/{id}")
-	public ResponseEntity<ScimUser> read(
-			@Parameter(description = "Id of user to be searched.") @PathVariable String id,
+	public ResponseEntity<ScimGroup> read(
+			@Parameter(description = "Id of group to be searched.") @PathVariable String id,
 			HttpServletRequest request
 			) throws ScimException {
 		
-		log.info("Recherche d'un compte : {}", id);
+		log.info("Recherche d'un groupe : {}", id);
 		
         throw new ScimNotImplementedException("En attente d'implémentation");
 	}
 
-	
+
 	// ----------------------------------------------------------------------------
 	// - PUT : "/{id}"
 	// ----------------------------------------------------------------------------
-
 	
-	@Operation(summary = "Replacing a user")
+	@Operation(summary = "Replacing a group")
 	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "200", description = "The user's has been updated.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimUser.class))}),
-			@ApiResponse(responseCode = "404", description = "User not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
+			@ApiResponse(responseCode = "200", description = "The group's has been updated.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimGroup.class))}),
+			@ApiResponse(responseCode = "404", description = "Group not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
 			})
 	@PutMapping("/{id}")
-	public ResponseEntity<ScimUser> replace(
-			@Parameter(description = "Id of user to be searched.") @PathVariable String id,
-			@RequestBody @Validated ScimUser scimUser,
+	public ResponseEntity<ScimGroup> replace(
+			@Parameter(description = "Id of group to be searched.") @PathVariable String id,
+			@RequestBody @Validated ScimGroup scimGroup,
 			HttpServletRequest request
 			) throws ScimException {
 
-		log.info("Demande de modification de compte : {}", scimUser);
+		log.info("Demande de modification de compte : {}", scimGroup);
 			
 		throw new ScimNotImplementedException("En attente d'implémentation");
 	}
-	
-	
+
+
 	// ----------------------------------------------------------------------------
 	// - DELETE : "/{id}"
 	// ----------------------------------------------------------------------------
 	
-	@Operation(summary = "Deleting a user")
+	@Operation(summary = "Deleting a group")
 	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "204", description = "User deleted.", content = { @Content(mediaType = "application/json")}),
-			@ApiResponse(responseCode = "404", description = "User not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
+			@ApiResponse(responseCode = "204", description = "Group deleted.", content = { @Content(mediaType = "application/json")}),
+			@ApiResponse(responseCode = "404", description = "Group not found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimError.class))})
 			})
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Object> delete(
 			@Parameter(description = "User ID") @PathVariable String id
 			) throws ScimException {
 		
-		log.info("Demande de suppression de compte : {}", id);
+		log.info("Demande de suppression de groupe : {}", id);
 		
 		throw new ScimNotImplementedException("En attente d'implémentation");
     }
 
-	// ========================================================
+
+    // ========================================================
 	// = Search
 	// ========================================================
 
@@ -128,9 +127,9 @@ public class ScimUserEndPoint {
 	// - GET : ""
 	// ----------------------------------------------------------------------------
 	
-	@Operation(summary = "Search for users")
+	@Operation(summary = "Search for groups")
 	@ApiResponses(value = { 
-			@ApiResponse(responseCode = "200", description = "users trouvés", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimResources.class))})
+			@ApiResponse(responseCode = "200", description = "groupes trouvés", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimResources.class))})
 			})
 	@GetMapping("")
 	public ResponseEntity<ScimResources> findUsers(
@@ -144,11 +143,9 @@ public class ScimUserEndPoint {
 			HttpServletRequest request
 			) throws ScimException {
 		
-		log.info("Recherche d'une liste de comptes");		
+		log.info("Recherche d'une liste de groupes");		
 
 		throw new ScimNotImplementedException("En attente d'implémentation");
 	}
-
-
 
 }
