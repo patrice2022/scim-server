@@ -1,6 +1,13 @@
 package fr.pay.scim.server.endpoint;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,12 +18,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.ForwardedHeaderUtils;
 
+import fr.pay.scim.server.endpoint.entity.ScimMeta;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
 import fr.pay.scim.server.endpoint.entity.user.ScimUser;
+import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
+import fr.pay.scim.server.endpoint.exception.ScimInternalServerErrorException;
+import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
 import fr.pay.scim.server.endpoint.exception.ScimNotImplementedException;
+import fr.pay.scim.server.service.UserService;
+import fr.pay.scim.server.service.entity.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +44,93 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequestMapping("/scim/v2/Users")
 public class ScimUserEndPoint {
+
+	@Autowired
+	private UserService userService;
+
+    // ========================================================
+	// = Mapper
+	// ========================================================
+	
+	// ----------------------------------------------------------------------------
+	// - scimUser -> user
+	// ----------------------------------------------------------------------------
+
+	private ScimUser mapper(User user, String location) {
+
+		ScimUser scimUser = new ScimUser();
+		
+		scimUser.setSchemas(Arrays.asList("urn:ietf:params:scim:schemas:core:2.0:User"));		// READ_WRITE
+
+		ScimMeta scimMeta = new ScimMeta();
+		scimMeta.setResourceType("User");
+		scimMeta.setLocation(location);
+		scimMeta.setCreated(user.getCreated());
+		scimMeta.setLastModified(user.getLastModified());
+		scimUser.setMeta(scimMeta);																	// READ_ONLY
+
+		scimUser.setId(user.getId());																// READ_ONLY
+		scimUser.setUserName(user.getUserName());													// READ_WRITE
+
+		return scimUser;
+	}
+
+	
+	private User mapper(ScimUser scimUser) {
+
+		// id			READ_ONLY
+
+		User user = new User()
+				.setUserName(scimUser.getUserName());												// READ_WRITE
+
+		return user;
+	}
+
+
+	private User mapper(User user, ScimUser scimUser) {
+
+		// id			READ_ONLY
+		
+		user.setUserName(scimUser.getUserName());													// READ_WRITE
+
+		return user;
+	}
+
+
+	// ========================================================
+	// = location
+	// ========================================================
+
+	private String location(HttpServletRequest request, String id) throws URISyntaxException {
+		
+		URI url = new URI(request.getRequestURL().toString());
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.path("/" + id)
+				.build()
+				.toUriString();
+		
+		return location;
+	}
+
+	private String location(HttpServletRequest request) throws URISyntaxException {
+		
+		URI url = new URI(request.getRequestURL().toString());
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.build()
+				.toUriString();
+		
+		return location;
+	}	
+
+
+
+
 
     // ========================================================
 	// = CRUD
@@ -50,9 +151,40 @@ public class ScimUserEndPoint {
 			HttpServletRequest request
 			) throws ScimException {
 
-		log.info("Demande de création de compte : {}", scimUser);
+		try {
+			log.info("Demande de création de compte : {}", scimUser);
 
-        throw new ScimNotImplementedException("En attente d'implémentation");
+			// On contrôle de l'username n'existe pas
+			if (userService.findUserByUserName(scimUser.getUserName()) != null) {
+				throw new ScimConflictException("UserName already exists.");
+			}
+
+			// Conversion de l'object scimUser en user
+			User user = mapper(scimUser);
+
+			// Création de l'utilisateur
+			user = userService.createUser(user);
+			
+			// Recherche de l'url de la resource
+			String location = location(request, user.getId());
+
+			// Conversion de l'object user en scimUser
+			scimUser = mapper(user, location);
+			log.info("Demande de création de compte effectuée: {}", scimUser);
+
+			// Generation du message de réponse
+			return ResponseEntity
+						.status(HttpStatus.CREATED)
+						.header("Content-Type", "application/scim+json")
+						.header("Location", location)
+						.body(scimUser);
+
+
+		} catch (URISyntaxException e) {
+			log.error("Demande de création de compte : {} -> {}", scimUser, e.getMessage());
+			
+			throw new ScimInternalServerErrorException("Internal Error");
+		}
 	}
 	
 	
@@ -60,7 +192,6 @@ public class ScimUserEndPoint {
 	// - GET : "/{id}"
 	// ----------------------------------------------------------------------------
 
-	
 	@Operation(summary = "Search for a user")
 	@ApiResponses(value = { 
 			@ApiResponse(responseCode = "200", description = "The user is found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimUser.class))}),
@@ -72,9 +203,36 @@ public class ScimUserEndPoint {
 			HttpServletRequest request
 			) throws ScimException {
 		
-		log.info("Recherche d'un compte : {}", id);
-		
-        throw new ScimNotImplementedException("En attente d'implémentation");
+		try {
+			log.info("Recherche d'un compte : {}", id);
+			
+			// Recherche de l'utilisateur
+			User user = userService.findUser(id);
+
+			// Si l'utilisateur n'existe pas alors erreur 404
+			if (user == null) {
+				throw new ScimNotFoundException("User not found.");			
+			}
+
+			// Recherche de l'url de la resource
+			String location = location(request);
+
+			// Conversion de l'objet user en scimUser
+			ScimUser scimUser = mapper(user, location);
+			log.info("Recherche d'un compte effectuée : {}", scimUser);
+							
+			// Generation de la réponse
+			return ResponseEntity
+					.status(HttpStatus.OK)
+					.header("Content-Type", "application/scim+json")
+					.header("Location", location)
+					.body(scimUser);
+
+		} catch (URISyntaxException e) {
+			log.error("Recherche d'un compte : {} -> {}", id, e.getMessage());
+			
+			throw new ScimInternalServerErrorException("Internal Error");
+		}
 	}
 
 	
@@ -95,16 +253,52 @@ public class ScimUserEndPoint {
 			HttpServletRequest request
 			) throws ScimException {
 
-		log.info("Demande de modification de compte : {}", scimUser);
+		try {
+
+			log.info("Demande de modification de compte : {}", scimUser);
+				
+			// Recherche de l'utilisateur
+			User user = userService.findUser(id);
+
+			// Si l'utilisateur n'existe pas alors erreur 404
+			if (user == null) {
+				throw new ScimNotFoundException("User not found.");			
+			}
+
+			// Conversion du scimUser en user (avec les anciennes valeurs comme ref)
+			user = mapper(user, scimUser);
+
+			// c'est l'id de la request qui fait reference.
+			user.setId(id);
+
+			// On fait la mise à jour
+			user = userService.updateUser(user);
+
+			// Recherche de l'url de la resource
+			String location = location(request);
+
+			// Conversion de l'objet user en scimUser
+			scimUser = mapper(user, location);
+			log.info("Demande de modification de compte effectuée : {}", scimUser);
 			
-		throw new ScimNotImplementedException("En attente d'implémentation");
+			return ResponseEntity
+					.status(HttpStatus.OK)    
+					.header("Content-Type", "application/scim+json")
+					.header("Location", location)
+					.body(scimUser);
+
+		} catch (URISyntaxException e) {
+			log.error("Demande de modification de compte : {} -> {}", scimUser, e.getMessage());
+				
+			throw new ScimInternalServerErrorException("Internal Error");
+		}
 	}
 	
 	
 	// ----------------------------------------------------------------------------
 	// - DELETE : "/{id}"
 	// ----------------------------------------------------------------------------
-	
+
 	@Operation(summary = "Deleting a user")
 	@ApiResponses(value = { 
 			@ApiResponse(responseCode = "204", description = "User deleted.", content = { @Content(mediaType = "application/json")}),
@@ -117,7 +311,19 @@ public class ScimUserEndPoint {
 		
 		log.info("Demande de suppression de compte : {}", id);
 		
-		throw new ScimNotImplementedException("En attente d'implémentation");
+		// Recherche de l'utilisateur
+		User user = userService.findUser(id);
+
+		// Si l'utilisateur n'existe pas alors erreur 404
+		if (user == null) {
+			throw new ScimNotFoundException("User not found.");			
+		}
+
+		userService.delete(id);
+		
+		return ResponseEntity
+				.noContent()
+				.build();
     }
 
 	// ========================================================
