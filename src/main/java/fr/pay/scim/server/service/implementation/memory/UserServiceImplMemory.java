@@ -4,34 +4,36 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import fr.pay.scim.server.service.UserService;
 import fr.pay.scim.server.service.entity.user.User;
+import fr.pay.scim.server.service.entity.user.Users;
 
 @Service
 public class UserServiceImplMemory implements UserService {
 
-    private List<User> users = new ArrayList<>();
+    private List<User> usersInMemory = new ArrayList<>();
 
      @Override
     public User createUser(User user) {
         user.setId(UUID.randomUUID().toString());
         user.setCreated(new Date());
         user.setLastModified(new Date());
-        users.add(user);
+        usersInMemory.add(user);
         return user;
     }
 
     @Override
     public User findUser(String id) {
-        return users.stream().filter(u -> id.equals(u.getId())).findFirst().orElse(null);
+        return usersInMemory.stream().filter(u -> id.equals(u.getId())).findFirst().orElse(null);
     }
 
     @Override
     public User findUserByUserName(String userName) {
-        return users.stream().filter(u -> userName.equalsIgnoreCase(u.getUserName())).findFirst().orElse(null);
+        return usersInMemory.stream().filter(u -> userName.equalsIgnoreCase(u.getUserName())).findFirst().orElse(null);
     }
 
     @Override
@@ -40,15 +42,31 @@ public class UserServiceImplMemory implements UserService {
         delete(user.getId());
 
         user.setLastModified(new Date());
-        users.add(user);
+        usersInMemory.add(user);
 
         return user;
     }
 
     @Override
     public void delete(String id) {
-        User old = users.stream().filter(u -> id.equals(u.getId())).findFirst().orElse(null);
-        users.remove(old);
+        User old = usersInMemory.stream().filter(u -> id.equals(u.getId())).findFirst().orElse(null);
+        usersInMemory.remove(old);
+    }
+
+
+    @Override
+    public Users findUsers(String filter, String attributes, String excludedAttributes, String sortBy, String sortOrder, int startIndex, int count) {
+
+        Users users = new Users();
+
+        users.setTotalResults(usersInMemory.size());
+
+        users.setStartIndex(startIndex);
+        users.setItemsPerPage(count);
+
+        users.setUsers(usersInMemory.stream().skip(startIndex).limit(count).collect(Collectors.toList()));
+
+        return users;
     }
 
 

@@ -2,7 +2,9 @@ package fr.pay.scim.server.endpoint;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,9 +30,9 @@ import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
 import fr.pay.scim.server.endpoint.exception.ScimInternalServerErrorException;
 import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
-import fr.pay.scim.server.endpoint.exception.ScimNotImplementedException;
 import fr.pay.scim.server.service.UserService;
 import fr.pay.scim.server.service.entity.user.User;
+import fr.pay.scim.server.service.entity.user.Users;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -348,11 +350,29 @@ public class ScimUserEndPoint {
 			@Parameter(description = "startIndex") @RequestParam(defaultValue = "1", required = false) int startIndex,
 			@Parameter(description = "count") @RequestParam(defaultValue = "10", required = false) int count,
 			HttpServletRequest request
-			) throws ScimException {
+			) throws ScimException, URISyntaxException {
 		
 		log.info("Recherche d'une liste de comptes");		
 
-		throw new ScimNotImplementedException("En attente d'implémentation");
+		Users users = userService.findUsers(filter, attributes, excludedAttributes, sortBy, sortOrder, startIndex, count);
+
+		List<ScimUser> resources = new ArrayList<>();
+
+		for (User user : users.getUsers()) {
+			resources.add(mapper(user, location(request, user.getId())));
+		}
+		
+		ScimResources scimUsers = new ScimResources();
+		scimUsers.setTotalResults(users.getTotalResults());
+		scimUsers.setItemsPerPage(count);
+		scimUsers.setStartIndex(startIndex);
+		scimUsers.setResources(resources);
+		
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.header("Content-Type", "application/scim+json;charset=UTF-8")
+//				.header("Location", location)
+				.body(scimUsers);
 	}
 
 
