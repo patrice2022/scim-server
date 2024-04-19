@@ -89,6 +89,12 @@ public class ScimUserEndPoint {
 		}
 
 		scimUser.setDisplayName(user.getDisplayName());												// READ_WRITE
+		scimUser.setTitle(user.getTitle());												// READ_WRITE
+		scimUser.setUserType(user.getUserType());										// READ_WRITE
+		scimUser.setPreferredLanguage(user.getPreferredLanguage());										// READ_WRITE
+		scimUser.setLocale(user.getLocale());										// READ_WRITE
+		scimUser.setTimezone(user.getTimezone());										// READ_WRITE
+		scimUser.setActive(user.getActive());										// READ_WRITE
 
 		return scimUser;
 	}
@@ -109,6 +115,12 @@ public class ScimUserEndPoint {
 		}
 
 		user.setDisplayName(scimUser.getDisplayName());												// READ_WRITE
+		user.setTitle(scimUser.getTitle());															// READ_WRITE
+		user.setUserType(scimUser.getUserType());										// READ_WRITE
+		user.setPreferredLanguage(scimUser.getPreferredLanguage());										// READ_WRITE
+		user.setLocale(scimUser.getLocale());										// READ_WRITE
+		user.setTimezone(scimUser.getTimezone());										// READ_WRITE
+		user.setActive(scimUser.getActive());										// READ_WRITE
 
 		return user;
 	}
@@ -132,7 +144,13 @@ public class ScimUserEndPoint {
 		}
 
 		user.setDisplayName(scimUser.getDisplayName());												// READ_WRITE
-		
+		user.setTitle(scimUser.getTitle());												// READ_WRITE
+		user.setUserType(scimUser.getUserType());										// READ_WRITE
+		user.setPreferredLanguage(scimUser.getPreferredLanguage());										// READ_WRITE
+		user.setLocale(scimUser.getLocale());										// READ_WRITE
+		user.setTimezone(scimUser.getTimezone());										// READ_WRITE
+		user.setActive(scimUser.getActive());										// READ_WRITE
+
 		return user;
 	}
 

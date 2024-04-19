@@ -27,6 +27,18 @@ public class User {
 
     private String displayName;
 
+    private String title;
+
+    private String userType;
+
+    private String preferredLanguage;
+
+    private String locale;
+
+    private String timezone;
+
+    private Boolean active;
+
     
     
     private Date created;
