@@ -1,6 +1,7 @@
 package fr.pay.scim.server.service.entity.group;
 
 import java.util.Date;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +17,8 @@ public class Group {
     private String id;
 
     private String displayName;
+
+    private List<String> members;
 
     private Date created;
 

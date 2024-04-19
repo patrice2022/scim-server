@@ -2,7 +2,9 @@ package fr.pay.scim.server.endpoint;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,12 +26,13 @@ import fr.pay.scim.server.endpoint.entity.ScimMeta;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
 import fr.pay.scim.server.endpoint.entity.group.ScimGroup;
+import fr.pay.scim.server.endpoint.entity.group.ScimMember;
 import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
 import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
-import fr.pay.scim.server.endpoint.exception.ScimNotImplementedException;
 import fr.pay.scim.server.service.GroupService;
 import fr.pay.scim.server.service.entity.group.Group;
+import fr.pay.scim.server.service.entity.group.Groups;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -67,6 +70,23 @@ public class ScimGroupEndPoint {
 		scimGroup.setId(group.getId());																// READ_ONLY
 		scimGroup.setDisplayName(group.getDisplayName());											// READ_WRITE
 
+		if (group.getMembers() != null && !group.getMembers().isEmpty()) {
+				
+			List<ScimMember> scimMembers = new ArrayList<>();
+			
+			for (String membre : group.getMembers()) {
+				
+				ScimMember scimMember = new ScimMember();
+				scimMember.setValue(membre);
+//				scimMember.setDisplay(user.getUserName());
+				scimMembers.add(scimMember);
+			}
+		
+			
+			scimGroup.setMembers(scimMembers);
+		}
+
+
 		return scimGroup;
 	}
 
@@ -75,8 +95,18 @@ public class ScimGroupEndPoint {
 		// id			READ_ONLY
 
 		Group group = new Group()
-				.setDisplayName(scimGroup.getDisplayName());					// READ_WRITE
+				.setDisplayName(scimGroup.getDisplayName());				// READ_WRITE
 
+		List<String> members = new ArrayList<>();
+		if (scimGroup.getMembers() != null) {
+					
+			for (ScimMember scimMember : scimGroup.getMembers()) {
+				members.add(scimMember.getValue());
+			}
+
+		}
+		group.setMembers(members);					// READ_WRITE
+	
 		return group;
 	}
 
@@ -86,6 +116,16 @@ public class ScimGroupEndPoint {
 		// id			READ_ONLY
 
 		group.setDisplayName(scimGroup.getDisplayName());						// READ_WRITE
+
+		List<String> members = new ArrayList<>();
+		if (scimGroup.getMembers() != null) {
+					
+			for (ScimMember scimMember : scimGroup.getMembers()) {
+				members.add(scimMember.getValue());
+			}
+
+		}
+		group.setMembers(members);					// READ_WRITE
 
 		return group;
 
@@ -322,11 +362,30 @@ public class ScimGroupEndPoint {
 			@Parameter(description = "startIndex") @RequestParam(defaultValue = "1", required = false) int startIndex,
 			@Parameter(description = "count") @RequestParam(defaultValue = "10", required = false) int count,
 			HttpServletRequest request
-			) throws ScimException {
+			) throws ScimException, URISyntaxException {
 		
 		log.info("Recherche d'une liste de groupes");		
 
-		throw new ScimNotImplementedException("En attente d'implémentation");
+		Groups groups = groupService.findGroups(filter, attributes, excludedAttributes, sortBy, sortOrder, startIndex, count);
+
+		List<ScimGroup> resources = new ArrayList<>();
+
+		for (Group group : groups.getGroups()) {
+			resources.add(mapper(group, location(request, group.getId())));
+			
+		}
+
+		ScimResources scimGroups = new ScimResources();
+		scimGroups.setTotalResults(groups.getTotalResults());
+		scimGroups.setItemsPerPage(count);
+		scimGroups.setStartIndex(startIndex);
+		scimGroups.setResources(resources);
+
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.header("Content-Type", "application/scim+json;charset=UTF-8")
+//				.header("Location", location)
+				.body(scimGroups);
 	}
 
 }

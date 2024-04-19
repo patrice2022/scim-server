@@ -1,5 +1,7 @@
 package fr.pay.scim.server.endpoint.entity.group;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -26,4 +28,10 @@ public class ScimGroup extends ScimResource {
 	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
 	private String displayName;
 
+		
+	/**
+	 * A list of members of the Group.
+	 */
+	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
+	private List<ScimMember> members;
 }

@@ -64,7 +64,7 @@ public class UserServiceImplMemory implements UserService {
         users.setStartIndex(startIndex);
         users.setItemsPerPage(count);
 
-        users.setUsers(usersInMemory.stream().skip(startIndex).limit(count).collect(Collectors.toList()));
+        users.setUsers(usersInMemory.stream().skip(startIndex-1).limit(count).collect(Collectors.toList()));
 
         return users;
     }
