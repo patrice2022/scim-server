@@ -67,8 +67,9 @@ public class ScimGroupEndPoint {
 		scimMeta.setLastModified(group.getLastModified());
 		scimGroup.setMeta(scimMeta);																// READ_ONLY
 
-		scimGroup.setId(group.getId());																// READ_ONLY
-		scimGroup.setDisplayName(group.getDisplayName());											// READ_WRITE
+		scimGroup.setId(group.getId());															// READ_ONLY
+		scimGroup.setExternalId(group.getExternalId());											// READ_WRITE
+		scimGroup.setDisplayName(group.getDisplayName());										// READ_WRITE
 
 		if (group.getMembers() != null && !group.getMembers().isEmpty()) {
 				
@@ -95,6 +96,7 @@ public class ScimGroupEndPoint {
 		// id			READ_ONLY
 
 		Group group = new Group()
+				.setExternalId(scimGroup.getExternalId())					// READ_WRITE
 				.setDisplayName(scimGroup.getDisplayName());				// READ_WRITE
 
 		List<String> members = new ArrayList<>();
@@ -115,7 +117,8 @@ public class ScimGroupEndPoint {
 
 		// id			READ_ONLY
 
-		group.setDisplayName(scimGroup.getDisplayName());						// READ_WRITE
+		group.setExternalId(scimGroup.getExternalId());						// READ_WRITE
+		group.setDisplayName(scimGroup.getDisplayName());					// READ_WRITE
 
 		List<String> members = new ArrayList<>();
 		if (scimGroup.getMembers() != null) {

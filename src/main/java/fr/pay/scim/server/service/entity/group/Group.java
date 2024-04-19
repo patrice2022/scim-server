@@ -16,6 +16,8 @@ public class Group {
 
     private String id;
 
+    private String externalId;
+
     private String displayName;
 
     private List<String> members;
