@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -57,14 +59,33 @@ public class UserServiceImplMemory implements UserService {
     @Override
     public Users findUsers(String filter, String attributes, String excludedAttributes, String sortBy, String sortOrder, int startIndex, int count) {
 
+        List<User> usersInSearch = usersInMemory;
+
+        if (filter != null) {
+
+            Pattern patternUsername = Pattern.compile("^username eq \"(.*)\"$", Pattern.CASE_INSENSITIVE);
+            Matcher matcherUsername = patternUsername.matcher(filter);
+            
+            if (matcherUsername.find()) {
+				String username = matcherUsername.group(1);
+
+                usersInSearch = usersInSearch.stream()
+                                    .filter(u -> u.getUserName().equalsIgnoreCase(username))
+                                    .collect(Collectors.toList());
+            }
+        }
+
         Users users = new Users();
 
-        users.setTotalResults(usersInMemory.size());
+        users.setTotalResults(usersInSearch.size());
 
         users.setStartIndex(startIndex);
         users.setItemsPerPage(count);
 
-        users.setUsers(usersInMemory.stream().skip(startIndex-1).limit(count).collect(Collectors.toList()));
+        users.setUsers(usersInSearch.stream()
+                                    .skip(startIndex-1)
+                                    .limit(count)
+                                    .collect(Collectors.toList()));
 
         return users;
     }

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -57,19 +59,39 @@ public class GroupServiceImplMemory implements GroupService {
     public Groups findGroups(String filter, String attributes, String excludedAttributes, String sortBy,
             String sortOrder, int startIndex, int count) {
 
-                System.out.println("resources : " +  groupsInMemory);
+        List<Group> groupsInSearch = groupsInMemory;
 
-                Groups groups = new Groups();
+        if (filter != null) {
 
-                groups.setTotalResults(groupsInMemory.size());
+            Pattern patternDisplayName = Pattern.compile("^displayName eq \"(.*)\"$", Pattern.CASE_INSENSITIVE);
+            Matcher matcherDisplayName = patternDisplayName.matcher(filter);
+            
+            if (matcherDisplayName.find()) {
+				String displayName = matcherDisplayName.group(1);
+
+                groupsInSearch = groupsInSearch.stream()
+                                    .filter(u -> u.getDisplayName().equalsIgnoreCase(displayName))
+                                    .collect(Collectors.toList());
+            }
+        }
+
+        // On ne transmet pas les membres lors de la recherhce
+        // TODO : A faire
+
+        Groups groups = new Groups();
+
+        groups.setTotalResults(groupsInSearch.size());
         
-                groups.setStartIndex(startIndex);
-                groups.setItemsPerPage(count);
+        groups.setStartIndex(startIndex);
+        groups.setItemsPerPage(count);
         
-                groups.setGroups(groupsInMemory.stream().skip(startIndex-1).limit(count).collect(Collectors.toList()));
+        groups.setGroups(groupsInSearch.stream()
+                                        .skip(startIndex-1)
+                                        .limit(count)
+                                        .collect(Collectors.toList()));
         
-                return groups;
-           }
+        return groups;
+    }
 
      
 }
