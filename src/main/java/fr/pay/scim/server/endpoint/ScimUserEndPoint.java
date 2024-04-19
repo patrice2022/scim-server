@@ -72,6 +72,7 @@ public class ScimUserEndPoint {
 		scimUser.setMeta(scimMeta);																	// READ_ONLY
 
 		scimUser.setId(user.getId());																// READ_ONLY
+		scimUser.setExternalId(user.getExternalId());												// READ_WRITE
 		scimUser.setUserName(user.getUserName());													// READ_WRITE
 
 		return scimUser;
@@ -83,7 +84,8 @@ public class ScimUserEndPoint {
 		// id			READ_ONLY
 
 		User user = new User()
-				.setUserName(scimUser.getUserName());												// READ_WRITE
+						.setExternalId(scimUser.getExternalId())									// READ_WRITE
+						.setUserName(scimUser.getUserName());										// READ_WRITE
 
 		return user;
 	}
@@ -93,6 +95,7 @@ public class ScimUserEndPoint {
 
 		// id			READ_ONLY
 		
+		user.setExternalId(scimUser.getExternalId());												// READ_WRITE
 		user.setUserName(scimUser.getUserName());													// READ_WRITE
 
 		return user;

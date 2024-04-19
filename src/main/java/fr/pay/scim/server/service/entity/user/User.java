@@ -15,6 +15,8 @@ public class User {
 
     private String id;
 
+    private String externalId;
+
     private String userName;
 
     private Date created;
