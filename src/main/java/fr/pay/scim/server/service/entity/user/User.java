@@ -25,7 +25,9 @@ public class User {
 
     private String givenName;
 
+    private String displayName;
 
+    
     
     private Date created;
 

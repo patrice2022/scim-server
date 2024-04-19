@@ -87,6 +87,9 @@ public class ScimUserEndPoint {
 			scimName.setGivenName(user.getGivenName());
 			scimUser.setName(scimName);																// READ_WRITE
 		}
+
+		scimUser.setDisplayName(user.getDisplayName());												// READ_WRITE
+
 		return scimUser;
 	}
 
@@ -104,6 +107,8 @@ public class ScimUserEndPoint {
 			user.setFamilyName(scimUser.getName().getFamilyName());									// READ_WRITE
 			user.setGivenName(scimUser.getName().getGivenName());									// READ_WRITE
 		}
+
+		user.setDisplayName(scimUser.getDisplayName());												// READ_WRITE
 
 		return user;
 	}
@@ -126,6 +131,8 @@ public class ScimUserEndPoint {
 			user.setGivenName(null);
 		}
 
+		user.setDisplayName(scimUser.getDisplayName());												// READ_WRITE
+		
 		return user;
 	}
 

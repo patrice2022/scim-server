@@ -63,5 +63,44 @@ public class ScimUser extends ScimResource {
 			accessMode = Schema.AccessMode.READ_WRITE
 			)
 	private @Valid ScimName name;
+
+
+	/**
+	 * The name of the user, suitable for display to end-users. Each user returned
+	 * MAY include a non-empty displayName value. The name SHOULD be the full name
+	 * of the User being described, if known (e.g., "Babs Jensen" or "Ms. Barbara J
+	 * Jensen, III") but MAY be a username or handle, if that is all that is
+	 * available (e.g., "bjensen"). The value provided SHOULD be the primary textual
+	 * label by which this User is normally displayed by the service provider when
+	 * presenting it to end-users.
+	 * 
+	 * <pre>
+	 * 		"name" : "displayName",
+	 * 		"type" : "string",
+	 * 		"multiValued" : false,
+	 * 		"description" : "The name of the User, suitable for display
+	 * 			to end-users.  The name SHOULD be the full name of the User being
+	 * 			described, if known.",
+	 * 		"required" : false,
+	 * 		"caseExact" : false,
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default",
+	 * 		"uniqueness" : "none"
+	 * </pre>
+	 */
+	@Schema(name = "displayName",
+			type = "string",
+			description = "The name of the user, suitable for display to end-users. Each user returned"
+					+ "	MAY include a non-empty displayName value. The name SHOULD be the full name"
+					+ "	of the User being described, if known (e.g., \"Babs Jensen\" or \"Ms. Barbara J"
+					+ "	Jensen, III\") but MAY be a username or handle, if that is all that is"
+					+ "	available (e.g., \"bjensen\"). The value provided SHOULD be the primary textual"
+					+ "	label by which this User is normally displayed by the service provider when"
+					+ "	presenting it to end-users.",
+			example = "Babs Jensen",
+			requiredMode = RequiredMode.NOT_REQUIRED,
+			accessMode = Schema.AccessMode.READ_WRITE
+			)
+	private String displayName;
 	
 }
