@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import fr.pay.scim.server.endpoint.entity.ScimResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,4 +41,27 @@ public class ScimUser extends ScimResource {
 			)
 	private String userName;
 
+	
+	/**
+	 * The components of the user's real name.
+	 * Providers MAY return just the full name as a single string in the
+	 * formatted sub-attribute, or they MAY return just the individual
+	 * component attributes using the other sub-attributes, or they MAY
+	 * return both.  If both variants are returned, they SHOULD be
+	 * describing the same name, with the formatted name indicating how the
+	 * component attributes should be combined.
+	 */
+	@Schema(name = "name",
+			description = "The components of the user's real name."
+					+ "	Providers MAY return just the full name as a single string in the"
+					+ "	formatted sub-attribute, or they MAY return just the individual"
+					+ "	component attributes using the other sub-attributes, or they MAY"
+					+ "	return both.  If both variants are returned, they SHOULD be"
+					+ "	describing the same name, with the formatted name indicating how the"
+					+ "	component attributes should be combined.",
+			requiredMode = RequiredMode.NOT_REQUIRED,
+			accessMode = Schema.AccessMode.READ_WRITE
+			)
+	private @Valid ScimName name;
+	
 }

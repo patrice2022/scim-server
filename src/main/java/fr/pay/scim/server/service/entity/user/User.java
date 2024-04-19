@@ -19,6 +19,14 @@ public class User {
 
     private String userName;
 
+    private String honorificPrefix;
+
+    private String familyName;
+
+    private String givenName;
+
+
+    
     private Date created;
 
     private Date lastModified;

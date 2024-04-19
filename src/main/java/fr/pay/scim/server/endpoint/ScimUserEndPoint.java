@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import org.springframework.web.util.ForwardedHeaderUtils;
 import fr.pay.scim.server.endpoint.entity.ScimMeta;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
+import fr.pay.scim.server.endpoint.entity.user.ScimName;
 import fr.pay.scim.server.endpoint.entity.user.ScimUser;
 import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
@@ -75,6 +77,16 @@ public class ScimUserEndPoint {
 		scimUser.setExternalId(user.getExternalId());												// READ_WRITE
 		scimUser.setUserName(user.getUserName());													// READ_WRITE
 
+		
+		if (StringUtils.isNotBlank(user.getHonorificPrefix()) 
+						|| StringUtils.isNotBlank(user.getFamilyName()) 
+						|| StringUtils.isNotBlank(user.getGivenName())) {
+			ScimName scimName = new ScimName();
+			scimName.setHonorificPrefix(user.getHonorificPrefix());
+			scimName.setFamilyName(user.getFamilyName());
+			scimName.setGivenName(user.getGivenName());
+			scimUser.setName(scimName);																// READ_WRITE
+		}
 		return scimUser;
 	}
 
@@ -87,6 +99,12 @@ public class ScimUserEndPoint {
 						.setExternalId(scimUser.getExternalId())									// READ_WRITE
 						.setUserName(scimUser.getUserName());										// READ_WRITE
 
+		if (scimUser.getName() != null) {
+			user.setHonorificPrefix(scimUser.getName().getHonorificPrefix());						// READ_WRITE
+			user.setFamilyName(scimUser.getName().getFamilyName());									// READ_WRITE
+			user.setGivenName(scimUser.getName().getGivenName());									// READ_WRITE
+		}
+
 		return user;
 	}
 
@@ -97,6 +115,16 @@ public class ScimUserEndPoint {
 		
 		user.setExternalId(scimUser.getExternalId());												// READ_WRITE
 		user.setUserName(scimUser.getUserName());													// READ_WRITE
+
+		if (scimUser.getName() != null) {
+			user.setHonorificPrefix(scimUser.getName().getHonorificPrefix());						// READ_WRITE
+			user.setFamilyName(scimUser.getName().getFamilyName());									// READ_WRITE
+			user.setGivenName(scimUser.getName().getGivenName());									// READ_WRITE
+		} else {
+			user.setHonorificPrefix(null);
+			user.setFamilyName(null);
+			user.setGivenName(null);
+		}
 
 		return user;
 	}
