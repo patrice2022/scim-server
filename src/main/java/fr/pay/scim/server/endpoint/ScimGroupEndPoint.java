@@ -1,6 +1,13 @@
 package fr.pay.scim.server.endpoint;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,12 +18,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.ForwardedHeaderUtils;
 
+import fr.pay.scim.server.endpoint.entity.ScimMeta;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
 import fr.pay.scim.server.endpoint.entity.group.ScimGroup;
+import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
+import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
 import fr.pay.scim.server.endpoint.exception.ScimNotImplementedException;
+import fr.pay.scim.server.service.GroupService;
+import fr.pay.scim.server.service.entity.group.Group;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +43,90 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequestMapping("/scim/v2/Groups")
 public class ScimGroupEndPoint {
+
+	@Autowired
+	private GroupService groupService;
+
+    // ========================================================
+	// = Mapper
+	// ========================================================
+
+	private ScimGroup mapper(Group group, String location) {
+
+		ScimGroup scimGroup = new ScimGroup();
+		
+		scimGroup.setSchemas(Arrays.asList("urn:ietf:params:scim:schemas:core:2.0:Group"));		// READ_WRITE
+
+		ScimMeta scimMeta = new ScimMeta();
+		scimMeta.setResourceType("Group");
+		scimMeta.setLocation(location);
+		scimMeta.setCreated(group.getCreated());
+		scimMeta.setLastModified(group.getLastModified());
+		scimGroup.setMeta(scimMeta);																// READ_ONLY
+
+		scimGroup.setId(group.getId());																// READ_ONLY
+		scimGroup.setDisplayName(group.getDisplayName());											// READ_WRITE
+
+		return scimGroup;
+	}
+
+	private Group mapper(ScimGroup scimGroup) {
+		
+		// id			READ_ONLY
+
+		Group group = new Group()
+				.setDisplayName(scimGroup.getDisplayName());					// READ_WRITE
+
+		return group;
+	}
+
+	
+	private Group mapper(Group group, ScimGroup scimGroup) {
+
+		// id			READ_ONLY
+
+		group.setDisplayName(scimGroup.getDisplayName());						// READ_WRITE
+
+		return group;
+
+	}
+
+
+	// ========================================================
+	// = location
+	// ========================================================
+
+	private String location(HttpServletRequest request, String id) throws URISyntaxException {
+		
+		URI url = new URI(request.getRequestURL().toString());
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.path("/" + id)
+				.build()
+				.toUriString();
+		
+		return location;
+	}
+
+	private String location(HttpServletRequest request) throws URISyntaxException {
+		
+		URI url = new URI(request.getRequestURL().toString());
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.build()
+				.toUriString();
+		
+		return location;
+	}	
+
+		
+
+
+
 
     // ========================================================
 	// = CRUD
@@ -48,18 +145,41 @@ public class ScimGroupEndPoint {
 	public ResponseEntity<ScimGroup> create(
 			@RequestBody @Validated ScimGroup scimGroup,
 			HttpServletRequest request
-			) throws ScimException {
+			) throws ScimException, URISyntaxException {
 
 		log.info("Demande de création d'un groupe : {}", scimGroup);
 
-        throw new ScimNotImplementedException("En attente d'implémentation");
+		// On contrôle de le groupe n'existe pas
+		if (groupService.findGroupByDisplayName(scimGroup.getDisplayName()) != null) {
+			throw new ScimConflictException("UserName already exists.");
+		}
+
+		// Conversion de l'object scimGroup en group
+		Group group = mapper(scimGroup);
+        
+		// Création de l'utilisateur
+		group = groupService.createGroup(group);
+		
+		// Recherche de l'url de la resource
+		String location = location(request, group.getId());
+
+		// Conversion de l'object user en scimUser
+		scimGroup = mapper(group, location);
+		log.info("Demande de création du groupe effectuée: {}", scimGroup);
+
+		// Generation du message de réponse
+		return ResponseEntity
+				.status(HttpStatus.CREATED)
+				.header("Content-Type", "application/scim+json")
+				.header("Location", location)
+				.body(scimGroup);
 	}
 
  	
 	// ----------------------------------------------------------------------------
 	// - GET : "/{id}"
 	// ----------------------------------------------------------------------------
-	
+
 	@Operation(summary = "Search for a group")
 	@ApiResponses(value = { 
 			@ApiResponse(responseCode = "200", description = "The group is found.", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = ScimGroup.class))}),
@@ -69,11 +189,31 @@ public class ScimGroupEndPoint {
 	public ResponseEntity<ScimGroup> read(
 			@Parameter(description = "Id of group to be searched.") @PathVariable String id,
 			HttpServletRequest request
-			) throws ScimException {
+			) throws ScimException, URISyntaxException {
 		
 		log.info("Recherche d'un groupe : {}", id);
-		
-        throw new ScimNotImplementedException("En attente d'implémentation");
+					
+		// Recherche de l'utilisateur
+		Group group = groupService.findGroup(id);
+
+		// Si le groupe n'existe pas alors erreur 404
+		if (group == null) {
+			throw new ScimNotFoundException("Group not found.");			
+		}
+
+		// Recherche de l'url de la resource
+		String location = location(request);		
+
+		// Conversion de l'objet group en scimGroup
+		ScimGroup scimGroup = mapper(group, location);
+		log.info("Recherche d'un group effectuée : {}", scimGroup);
+					
+		// Generation de la réponse
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.header("Content-Type", "application/scim+json")
+				.header("Location", location)
+				.body(scimGroup);
 	}
 
 
@@ -91,18 +231,47 @@ public class ScimGroupEndPoint {
 			@Parameter(description = "Id of group to be searched.") @PathVariable String id,
 			@RequestBody @Validated ScimGroup scimGroup,
 			HttpServletRequest request
-			) throws ScimException {
+			) throws ScimException, URISyntaxException {
 
-		log.info("Demande de modification de compte : {}", scimGroup);
-			
-		throw new ScimNotImplementedException("En attente d'implémentation");
+		log.info("Demande de modification du groupe : {}", scimGroup);
+
+		// Recherche de l'utilisateur
+		Group group = groupService.findGroup(id);
+		
+		// Si l'utilisateur n'existe pas alors erreur 404
+		if (group == null) {
+			throw new ScimNotFoundException("Group not found.");			
+		}
+
+		// Conversion du scimUser en user (avec les anciennes valeurs comme ref)
+		group = mapper(group, scimGroup);
+
+		// c'est l'id de la request qui fait reference.
+		group.setId(id);
+
+		// On fait la mise à jour
+		group = groupService.updateGroup(group);
+
+		// Recherche de l'url de la resource
+		String location = location(request);
+
+		// Conversion de l'objet user en scimUser
+		scimGroup = mapper(group, location);
+
+		log.info("Demande de modification du groupe effectuée : {}", scimGroup);
+
+		return ResponseEntity
+					.status(HttpStatus.OK)    
+					.header("Content-Type", "application/scim+json")
+					.header("Location", location)
+					.body(scimGroup);
 	}
 
 
 	// ----------------------------------------------------------------------------
 	// - DELETE : "/{id}"
 	// ----------------------------------------------------------------------------
-	
+
 	@Operation(summary = "Deleting a group")
 	@ApiResponses(value = { 
 			@ApiResponse(responseCode = "204", description = "Group deleted.", content = { @Content(mediaType = "application/json")}),
@@ -115,7 +284,19 @@ public class ScimGroupEndPoint {
 		
 		log.info("Demande de suppression de groupe : {}", id);
 		
-		throw new ScimNotImplementedException("En attente d'implémentation");
+		// Recherche de l'utilisateur
+		Group group = groupService.findGroup(id);
+
+		// Si le groupe n'existe pas alors erreur 404
+		if (group == null) {
+			throw new ScimNotFoundException("Group not found.");			
+		}
+
+		groupService.delete(id);
+		
+		return ResponseEntity
+				.noContent()
+				.build();
     }
 
 
