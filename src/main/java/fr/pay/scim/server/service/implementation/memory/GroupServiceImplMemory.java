@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import fr.pay.scim.server.service.GroupService;
 import fr.pay.scim.server.service.entity.group.Group;
 import fr.pay.scim.server.service.entity.group.Groups;
+import fr.pay.scim.server.service.entity.user.User;
 
 @Service
 public class GroupServiceImplMemory implements GroupService {
@@ -75,9 +76,6 @@ public class GroupServiceImplMemory implements GroupService {
             }
         }
 
-        // On ne transmet pas les membres lors de la recherhce
-        // TODO : A faire
-
         Groups groups = new Groups();
 
         groups.setTotalResults(groupsInSearch.size());
@@ -92,6 +90,12 @@ public class GroupServiceImplMemory implements GroupService {
         
         return groups;
     }
+  
 
-     
+
+
+    void userDeleted(User user) {
+        groupsInMemory.forEach(g -> g.getMembers().remove(user.getId()));
+    }
+    
 }

@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.pay.scim.server.service.UserService;
@@ -16,6 +17,9 @@ import fr.pay.scim.server.service.entity.user.Users;
 
 @Service
 public class UserServiceImplMemory implements UserService {
+
+    @Autowired
+    GroupServiceImplMemory groupServiceImplMemory;
 
     private List<User> usersInMemory = new ArrayList<>();
 
@@ -37,10 +41,12 @@ public class UserServiceImplMemory implements UserService {
     public User findUserByUserName(String userName) {
         return usersInMemory.stream().filter(u -> userName.equalsIgnoreCase(u.getUserName())).findFirst().orElse(null);
     }
-
+    
     @Override
     public User updateUser(User user) {
 
+        groupServiceImplMemory.userDeleted(user);
+        
         delete(user.getId());
 
         user.setLastModified(new Date());

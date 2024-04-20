@@ -1,6 +1,7 @@
 package fr.pay.scim.server.service.entity.user;
 
 import java.util.Date;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,8 +40,14 @@ public class User {
 
     private Boolean active;
 
-    
-    
+    private String password;
+
+    private List<Email> emails;
+
+    private List<PhoneNumber> phoneNumbers;
+
+    private List<UserGroup> groups;
+
     private Date created;
 
     private Date lastModified;

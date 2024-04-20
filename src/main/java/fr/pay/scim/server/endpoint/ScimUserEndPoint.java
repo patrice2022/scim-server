@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,18 @@ import org.springframework.web.util.ForwardedHeaderUtils;
 import fr.pay.scim.server.endpoint.entity.ScimMeta;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
+import fr.pay.scim.server.endpoint.entity.user.ScimEmail;
 import fr.pay.scim.server.endpoint.entity.user.ScimName;
+import fr.pay.scim.server.endpoint.entity.user.ScimPhoneNumber;
 import fr.pay.scim.server.endpoint.entity.user.ScimUser;
+import fr.pay.scim.server.endpoint.entity.user.ScimUserGroup;
 import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
 import fr.pay.scim.server.endpoint.exception.ScimInternalServerErrorException;
 import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
 import fr.pay.scim.server.service.UserService;
+import fr.pay.scim.server.service.entity.user.Email;
+import fr.pay.scim.server.service.entity.user.PhoneNumber;
 import fr.pay.scim.server.service.entity.user.User;
 import fr.pay.scim.server.service.entity.user.Users;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,7 +63,7 @@ public class ScimUserEndPoint {
 	// ========================================================
 	
 	// ----------------------------------------------------------------------------
-	// - scimUser -> user
+	// - user  -->  scimUser
 	// ----------------------------------------------------------------------------
 
 	private ScimUser mapper(User user, String location) {
@@ -95,6 +101,39 @@ public class ScimUserEndPoint {
 		scimUser.setLocale(user.getLocale());										// READ_WRITE
 		scimUser.setTimezone(user.getTimezone());										// READ_WRITE
 		scimUser.setActive(user.getActive());										// READ_WRITE
+		// scimUser.setPassword(user.getPassword());								// WRITE_ONLY
+
+		if (user.getEmails() != null) {
+			scimUser.setEmails(user.getEmails()											// READ_WRITE
+									.stream()
+									.map(email -> new ScimEmail()
+														.setValue(email.getValue())
+														.setDisplay(email.getDisplay())
+														.setType(email.getType())
+														.setPrimary(email.getPrimary()))
+									.collect(Collectors.toList()));
+		}
+
+		if (user.getPhoneNumbers() != null) {
+			scimUser.setPhoneNumbers(user.getPhoneNumbers()											// READ_WRITE
+									.stream()
+									.map(phone -> new ScimPhoneNumber()
+														.setValue(phone.getValue())
+														.setDisplay(phone.getDisplay())
+														.setType(phone.getType())
+														.setPrimary(phone.getPrimary()))
+									.collect(Collectors.toList()));
+		}
+
+		if (user.getGroups() != null) {					
+			scimUser.setGroups(user.getGroups()					// READ_ONLY
+					.stream()
+					.map(userGroup-> new ScimUserGroup()
+								.setValue(userGroup.getValue())
+								.setDisplay(userGroup.getDisplay())
+								.setType(userGroup.getType()))
+					.collect(Collectors.toList()));
+		}
 
 		return scimUser;
 	}
@@ -121,6 +160,30 @@ public class ScimUserEndPoint {
 		user.setLocale(scimUser.getLocale());										// READ_WRITE
 		user.setTimezone(scimUser.getTimezone());										// READ_WRITE
 		user.setActive(scimUser.getActive());										// READ_WRITE
+		user.setPassword(scimUser.getPassword());										// WRITE_ONLY
+
+		if (scimUser.getEmails() != null) {
+			user.setEmails(scimUser.getEmails()					// READ_WRITE
+					.stream()
+					.map(scimEmail -> new Email()
+								.setValue(scimEmail.getValue())
+								.setDisplay(scimEmail.getDisplay())
+								.setType(scimEmail.getType())
+								.setPrimary(scimEmail.getPrimary()))
+					.collect(Collectors.toList()));
+		}
+
+		if (scimUser.getPhoneNumbers() != null) {
+			user.setPhoneNumbers(scimUser.getPhoneNumbers()					// READ_WRITE
+					.stream()
+					.map(scimPhoneNumber -> new PhoneNumber()
+								.setValue(scimPhoneNumber.getValue())
+								.setDisplay(scimPhoneNumber.getDisplay())
+								.setType(scimPhoneNumber.getType())
+								.setPrimary(scimPhoneNumber.getPrimary()))
+					.collect(Collectors.toList()));
+		}
+
 
 		return user;
 	}
@@ -129,7 +192,7 @@ public class ScimUserEndPoint {
 	private User mapper(User user, ScimUser scimUser) {
 
 		// id			READ_ONLY
-		
+
 		user.setExternalId(scimUser.getExternalId());												// READ_WRITE
 		user.setUserName(scimUser.getUserName());													// READ_WRITE
 
@@ -150,6 +213,29 @@ public class ScimUserEndPoint {
 		user.setLocale(scimUser.getLocale());										// READ_WRITE
 		user.setTimezone(scimUser.getTimezone());										// READ_WRITE
 		user.setActive(scimUser.getActive());										// READ_WRITE
+		user.setPassword(scimUser.getPassword());										// WRITE_ONLY
+
+		if (scimUser.getEmails() != null) {
+			user.setEmails(scimUser.getEmails()					// READ_WRITE
+					.stream()
+					.map(scimEmail -> new Email()
+								.setValue(scimEmail.getValue())
+								.setDisplay(scimEmail.getDisplay())
+								.setType(scimEmail.getType())
+								.setPrimary(scimEmail.getPrimary()))
+					.collect(Collectors.toList()));
+		}
+
+		if (scimUser.getPhoneNumbers() != null) {
+			user.setPhoneNumbers(scimUser.getPhoneNumbers()					// READ_WRITE
+					.stream()
+					.map(scimPhoneNumber -> new PhoneNumber()
+								.setValue(scimPhoneNumber.getValue())
+								.setDisplay(scimPhoneNumber.getDisplay())
+								.setType(scimPhoneNumber.getType())
+								.setPrimary(scimPhoneNumber.getPrimary()))
+					.collect(Collectors.toList()));
+		}
 
 		return user;
 	}

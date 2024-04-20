@@ -1,5 +1,7 @@
 package fr.pay.scim.server.endpoint.entity.user;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -367,7 +369,250 @@ public class ScimUser extends ScimResource {
 			)
 	private Boolean active;
 	
-	
 
+	/**
+	 * This attribute is intended to be used as a means to set, replace, or compare
+	 * (i.e., filter for equality) a password. The cleartext value or the hashed
+	 * value of a password SHALL NOT be returnable by a service provider. If a
+	 * service provider holds the value locally, the value SHOULD be hashed. When a
+	 * password is set or changed by the client, the cleartext password SHOULD be
+	 * processed by the service provider as follows:
+	 * 
+	 * * Prepare the cleartext value for international language comparison. See
+	 * Section 7.8 of [RFC7644].
+	 * 
+	 * * Validate the value against server password policy. Note: The definition and
+	 * enforcement of password policy are beyond the scope of this document.
+	 * 
+	 * * Ensure that the value is encrypted (e.g., hashed). See Section 9.2 for
+	 * acceptable hashing and encryption handling when storing or persisting for
+	 * provisioning workflow reasons.
+	 * 
+	 * A service provider that immediately passes the cleartext value on to another
+	 * system or programming interface MUST pass the value directly over a secured
+	 * connection (e.g., Transport Layer Security (TLS)). If the value needs to be
+	 * temporarily persisted for a period of time (e.g., because of a workflow)
+	 * before provisioning, then the value MUST be protected by some method, such as
+	 * encryption.
+	 * 
+	 * Testing for an equality match MAY be supported if there is an existing stored
+	 * hashed value. When testing for equality, the service provider:
+	 * 
+	 * * Prepares the filter value for international language comparison. See
+	 * Section 7.8 of [RFC7644].
+	 * 
+	 * * Generates the salted hash of the filter value and tests for a match with
+	 * the locally held value.
+	 * 
+	 * The mutability of the password attribute is "writeOnly", indicating that the
+	 * value MUST NOT be returned by a service provider in any form (the attribute
+	 * characteristic "returned" is "never").
+	 * 
+	 * <pre>
+	 * 		"name" : "password",
+	 * 		"type" : "string",
+	 * 		"multiValued" : false,
+	 * 		"description" : "The User's cleartext password.  This
+	 * 			attribute is intended to be used as a means to specify an initial
+	 * 			password when creating a new User or to reset an existing User's
+	 * 			password.",
+	 * 		"required" : false,
+	 * 		"caseExact" : false,
+	 * 		"mutability" : "writeOnly",
+	 * 		"returned" : "never",
+	 * 		"uniqueness" : "none"
+	 * </pre>
+	 */
+	@Schema(name = "password",
+			type = "string",
+			description = "The User's cleartext password.  This"
+					+ "	attribute is intended to be used as a means to specify an initial"
+					+ "	password when creating a new User or to reset an existing User's"
+					+ "	password.",
+			example = "Password",
+			requiredMode = RequiredMode.NOT_REQUIRED,
+			accessMode = Schema.AccessMode.WRITE_ONLY
+			)
+	private String password;
+
+	
+	/**
+	 * ScimEmail addresses for the User. The value SHOULD be specified according to
+	 * [RFC5321]. Service providers SHOULD canonicalize the value according to
+	 * [RFC5321], e.g., "bjensen@example.com" instead of "bjensen@EXAMPLE.COM".
+	 * 
+	 * <pre>
+	 * 		"name" : "emails",
+	 * 		"type" : "complex",
+	 * 		"multiValued" : true,
+	 * 		"description" : "Email addresses for the user.  The value
+	 * 			SHOULD be canonicalized by the service provider, e.g.,
+	 * 			'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'.
+	 * 			Canonical type values of 'work', 'home', and 'other'.",
+	 * 		"required" : false
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default",
+	 * 		"uniqueness" : "none"
+	 * </pre>
+	 */
+	@Schema(name = "emails",
+			type = "complex",
+			description = "ScimEmail addresses for the User.",
+			requiredMode = RequiredMode.NOT_REQUIRED,
+			accessMode = Schema.AccessMode.READ_WRITE
+			)
+	private @Valid List<ScimEmail> emails;
+
+	
+	
+	/**
+	 * Phone numbers for the user. The value SHOULD be specified according to the
+	 * format defined in [RFC3966], e.g., 'tel:+1-201-555-0123'. Service providers
+	 * SHOULD canonicalize the value according to [RFC3966] format, when
+	 * appropriate.
+	 * 
+	 * <pre>
+	 * 		"name" : "phoneNumbers",
+	 * 		"type" : "complex",
+	 * 		"multiValued" : true,
+	 * 		"description" : "Phone numbers for the User.  The value
+	 * 			SHOULD be canonicalized by the service provider according to the
+	 * 			format specified in RFC 3966, e.g., 'tel:+1-201-555-0123'.
+	 * 			Canonical type values of 'work', 'home', 'mobile', 'fax', 'pager',
+	 * 			and 'other'.",
+	 * 		"required" : false,
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default"
+	 * </pre>
+	 */
+	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
+	private @Valid List<ScimPhoneNumber> phoneNumbers;
+
+	
+	/**
+	 * Instant messaging address for the user. No official canonicalization rules
+	 * exist for all instant messaging addresses, but service providers SHOULD, when
+	 * appropriate, remove all whitespace and convert the address to lowercase.
+	 * 
+	 * <pre>
+	 * 		"name" : "ims",
+	 * 		"type" : "complex",
+	 * 		"multiValued" : true,
+	 * 		"description" : "Instant messaging addresses for the User.",
+	 * 		"required" : false,
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default"
+	 * </pre>
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
+//	private List<ScimIms> ims;
+
+	
+	/**
+	 * A URI that is a uniform resource locator (as defined in Section 1.1.3 of
+	 * [RFC3986]) that points to a resource location representing the user's image.
+	 * The resource MUST be a file (e.g., a GIF, JPEG, or PNG image file) rather
+	 * than a web page containing an image. Service providers MAY return the same
+	 * image in different sizes, although it is recognized that no standard for
+	 * describing images of various sizes currently exists. Note that this attribute
+	 * SHOULD NOT be used to send down arbitrary photos taken by this user; instead,
+	 * profile photos of the user that are suitable for display when describing the
+	 * user should be sent. Instead of the standard canonical values for type, this
+	 * attribute defines the following canonical values to represent popular photo
+	 * sizes: "photo" and "thumbnail".
+	 * 
+	 * <pre>
+	 * 		"name" : "photos",
+	 * 		"type" : "complex",
+	 * 		"multiValued" : true,
+	 * 		"description" : "URLs of photos of the User.",
+	 * 		"required" : false,
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default"
+	 * </pre>
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
+//	private List<ScimPhoto> photos;
+	
+	
+	/**
+	 * A physical mailing address for this user. Canonical type values of "work",
+	 * "home", and "other". This attribute is a complex type with the following
+	 * sub-attributes. All sub-attributes are OPTIONAL.
+	 * 
+	 * <pre>
+	 * 		"name" : "addresses",
+	 * 		"type" : "complex",
+	 * 		"multiValued" : true,
+	 * 		"description" : "A physical mailing address for this User.
+	 * 			Canonical type values of 'work', 'home', and 'other'.  This attribute
+	 * 			is a complex type with the following sub-attributes.",
+	 * 		"required" : false,
+	 * 		"mutability" : "readWrite",
+	 * 		"returned" : "default",
+	 * 		"uniqueness" : "none"
+	 * </pre>
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_WRITE)
+//	private List<ScimAddress> addresses;	
+	
+	
+	/**
+	 * A list of groups to which the user belongs, either through direct membership,
+	 * through nested groups, or dynamically calculated. The values are meant to
+	 * enable expression of common group-based or role-based access control models,
+	 * although no explicit authorization model is defined. It is intended that the
+	 * semantics of group membership and any behavior or authorization granted as a
+	 * result of membership are defined by the service provider. The canonical types
+	 * "direct" and "indirect" are defined to describe how the group membership was
+	 * derived. Direct group membership indicates that the user is directly
+	 * associated with the group and SHOULD indicate that clients may modify
+	 * membership through the "Group" resource. Indirect membership indicates that
+	 * user membership is transitive or dynamic and implies that clients cannot
+	 * modify indirect group membership through the "Group" resource but MAY modify
+	 * direct group membership through the "Group" resource, which may influence
+	 * indirect memberships. If the SCIM service provider exposes a "Group"
+	 * resource, the "value" sub-attribute MUST be the "id", and the "$ref"
+	 * sub-attribute must be the URI of the corresponding "Group" resources to which
+	 * the user belongs. Since this attribute has a mutability of "readOnly", group
+	 * membership changes MUST be applied via the "Group" Resource (Section 4.2).
+	 * 
+	 * This attribute has a mutability of "readOnly".
+	 */
+	@Schema(accessMode = Schema.AccessMode.READ_ONLY)
+	private @Valid List<ScimUserGroup> groups;
+	
+	
+	/**
+	 * A list of entitlements for the user that represent a thing the user has. An
+	 * entitlement may be an additional right to a thing, object, or service. No
+	 * vocabulary or syntax is specified; service providers and clients are expected
+	 * to encode sufficient information in the value so as to accurately and without
+	 * ambiguity determine what the user has access to. This value has no canonical
+	 * types, although a type may be useful as a means to scope entitlements.
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_ONLY)
+//	private List<ScimEntitlement> entitlements;
+	
+	
+	/**
+	 * A list of roles for the user that collectively represent who the user is,
+	 * e.g., "Student", "Faculty". No vocabulary or syntax is specified, although it
+	 * is expected that a role value is a String or label representing a collection
+	 * of entitlements. This value has no canonical types.
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_ONLY)
+//	private List<ScimRole> roles;
+	
+	
+	/**
+	 * A list of certificates associated with the resource (e.g., a User). Each
+	 * value contains exactly one DER-encoded X.509 certificate (see Section 4 of
+	 * [RFC5280]), which MUST be base64 encoded per Section 4 of [RFC4648]. A single
+	 * value MUST NOT contain multiple certificates and so does not contain the
+	 * encoding "SEQUENCE OF Certificate" in any guise.
+	 */
+//	@Schema(accessMode = Schema.AccessMode.READ_ONLY)
+//	private List<ScimX509Certificate> x509Certificates;
 
 }
