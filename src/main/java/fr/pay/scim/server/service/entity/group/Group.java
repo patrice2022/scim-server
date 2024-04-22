@@ -20,7 +20,7 @@ public class Group {
 
     private String displayName;
 
-    private List<String> members;
+    private List<Member> members;
 
     private Date created;
 

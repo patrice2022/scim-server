@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,13 +25,16 @@ import org.springframework.web.util.ForwardedHeaderUtils;
 import fr.pay.scim.server.endpoint.entity.ScimResources;
 import fr.pay.scim.server.endpoint.entity.error.ScimError;
 import fr.pay.scim.server.endpoint.entity.user.ScimUser;
+import fr.pay.scim.server.endpoint.entity.user.ScimUserGroup;
 import fr.pay.scim.server.endpoint.exception.ScimConflictException;
 import fr.pay.scim.server.endpoint.exception.ScimException;
 import fr.pay.scim.server.endpoint.exception.ScimInternalServerErrorException;
 import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
 import fr.pay.scim.server.endpoint.mapper.ScimToUserMapper;
 import fr.pay.scim.server.endpoint.mapper.UserToScimMapper;
+import fr.pay.scim.server.service.GroupService;
 import fr.pay.scim.server.service.UserService;
+import fr.pay.scim.server.service.entity.group.Group;
 import fr.pay.scim.server.service.entity.user.User;
 import fr.pay.scim.server.service.entity.user.Users;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,6 +53,9 @@ public class ScimUserEndPoint {
 
 	@Autowired
 	private UserService userService;
+
+	@Autowired
+	private GroupService groupService;
 
 	@Autowired
 	private UserToScimMapper userToScimMapper;
@@ -104,7 +111,28 @@ public class ScimUserEndPoint {
 		return location;
 	}	
 
+	private String location(HttpServletRequest request, String path, String id) {
+		
+		URI url;
+		try {
+			url = new URI(request.getRequestURL().toString());
 
+			url = new URI(url.toString().substring(0, url.toString().lastIndexOf("/Users")));
+
+ 		} catch (URISyntaxException e) {
+			return null;
+		}
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.path("/" + path)
+				.path("/" + id)
+				.build()
+				.toUriString();
+		
+		return location;
+	}
 
 
 
@@ -195,6 +223,14 @@ public class ScimUserEndPoint {
 
 			// Conversion de l'objet user en scimUser
 			ScimUser scimUser = mapper(user, location);
+
+			// Recherche des groupes de l'utilisateur
+			List<Group> groups = groupService.findGroupByUserId(id);
+			scimUser.setGroups(groups.stream().map(g -> new ScimUserGroup()
+																.setValue(g.getId())
+																.setDisplay(g.getDisplayName())
+																.setRef(location(request, "Groups", g.getId()))).collect(Collectors.toList()));
+
 			log.info("Recherche d'un compte effectuée : {}", scimUser);
 							
 			// Generation de la réponse
@@ -255,6 +291,14 @@ public class ScimUserEndPoint {
 
 			// Conversion de l'objet user en scimUser
 			scimUser = mapper(user, location);
+
+			// Recherche des groupes de l'utilisateur
+			List<Group> groups = groupService.findGroupByUserId(id);
+			scimUser.setGroups(groups.stream().map(g -> new ScimUserGroup()
+																.setValue(g.getId())
+																.setDisplay(g.getDisplayName())
+																.setRef(location(request, "Groups", g.getId()))).collect(Collectors.toList()));
+			
 			log.info("Demande de modification de compte effectuée : {}", scimUser);
 			
 			return ResponseEntity
@@ -333,7 +377,18 @@ public class ScimUserEndPoint {
 		List<ScimUser> resources = new ArrayList<>();
 
 		for (User user : users.getUsers()) {
-			resources.add(mapper(user, location(request, user.getId())));
+
+			ScimUser scimUser = mapper(user, location(request, user.getId()));
+
+			// Recherche des groupes de l'utilisateur
+			List<Group> groups = groupService.findGroupByUserId(user.getId());
+			scimUser.setGroups(groups.stream().map(g -> new ScimUserGroup()
+																.setValue(g.getId())
+																.setDisplay(g.getDisplayName())
+																.setRef(location(request, "Groups", g.getId()))).collect(Collectors.toList()));
+
+			resources.add(scimUser);
+
 		}
 		
 		ScimResources scimUsers = new ScimResources();

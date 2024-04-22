@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import fr.pay.scim.server.service.GroupService;
 import fr.pay.scim.server.service.entity.group.Group;
 import fr.pay.scim.server.service.entity.group.Groups;
+import fr.pay.scim.server.service.entity.group.Member;
 import fr.pay.scim.server.service.entity.user.User;
 
 @Service
@@ -95,7 +96,20 @@ public class GroupServiceImplMemory implements GroupService {
 
 
     void userDeleted(User user) {
-        groupsInMemory.forEach(g -> g.getMembers().remove(user.getId()));
+
+        List<Group> groupes = findGroupByUserId(user.getId());
+        for (Group group : groupes) {
+            
+            Member member = group.getMembers().stream().filter(g -> g.getValue().equals(user.getId())).findAny().orElse(null);
+            if (member != null) {
+                group.getMembers().remove(member);
+            }
+        }
+    }
+
+    @Override
+    public List<Group> findGroupByUserId(String id) {
+        return groupsInMemory.stream().filter(g -> g.getMembers().stream().anyMatch(u -> u.getValue().equals(id))).collect(Collectors.toList());
     }
     
 }

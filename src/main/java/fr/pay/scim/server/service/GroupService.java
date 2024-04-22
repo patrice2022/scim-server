@@ -1,5 +1,7 @@
 package fr.pay.scim.server.service;
 
+import java.util.List;
+
 import fr.pay.scim.server.service.entity.group.Group;
 import fr.pay.scim.server.service.entity.group.Groups;
 
@@ -17,5 +19,7 @@ public interface GroupService {
 
     public Groups findGroups(String filter, String attributes, String excludedAttributes, String sortBy,
             String sortOrder, int startIndex, int count);
+
+    public List<Group> findGroupByUserId(String id);
 
 }

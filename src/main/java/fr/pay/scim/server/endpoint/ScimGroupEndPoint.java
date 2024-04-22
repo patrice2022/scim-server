@@ -33,6 +33,7 @@ import fr.pay.scim.server.endpoint.exception.ScimNotFoundException;
 import fr.pay.scim.server.service.GroupService;
 import fr.pay.scim.server.service.entity.group.Group;
 import fr.pay.scim.server.service.entity.group.Groups;
+import fr.pay.scim.server.service.entity.group.Member;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -54,7 +55,8 @@ public class ScimGroupEndPoint {
 	// = Mapper
 	// ========================================================
 
-	private ScimGroup mapper(Group group, String location) {
+
+	private ScimGroup mapper(HttpServletRequest request, Group group, String location) throws URISyntaxException {
 
 		ScimGroup scimGroup = new ScimGroup();
 		
@@ -75,11 +77,15 @@ public class ScimGroupEndPoint {
 				
 			List<ScimMember> scimMembers = new ArrayList<>();
 			
-			for (String membre : group.getMembers()) {
+			for (Member membre : group.getMembers()) {
 				
 				ScimMember scimMember = new ScimMember();
-				scimMember.setValue(membre);
-//				scimMember.setDisplay(user.getUserName());
+				scimMember.setValue(membre.getValue());
+				scimMember.setDisplay(membre.getDisplay());
+				
+				scimMember.setRef(location(request, "Users", membre.getValue()));
+				scimMember.setType(membre.getType());
+
 				scimMembers.add(scimMember);
 			}
 		
@@ -99,11 +105,17 @@ public class ScimGroupEndPoint {
 				.setExternalId(scimGroup.getExternalId())					// READ_WRITE
 				.setDisplayName(scimGroup.getDisplayName());				// READ_WRITE
 
-		List<String> members = new ArrayList<>();
+		List<Member> members = new ArrayList<>();
 		if (scimGroup.getMembers() != null) {
 					
 			for (ScimMember scimMember : scimGroup.getMembers()) {
-				members.add(scimMember.getValue());
+				Member membre = new Member();
+				
+				membre.setValue(scimMember.getValue());
+				membre.setDisplay(scimMember.getDisplay());
+				membre.setType(scimMember.getType());
+
+				members.add(membre);
 			}
 
 		}
@@ -120,11 +132,17 @@ public class ScimGroupEndPoint {
 		group.setExternalId(scimGroup.getExternalId());						// READ_WRITE
 		group.setDisplayName(scimGroup.getDisplayName());					// READ_WRITE
 
-		List<String> members = new ArrayList<>();
+		List<Member> members = new ArrayList<>();
 		if (scimGroup.getMembers() != null) {
 					
 			for (ScimMember scimMember : scimGroup.getMembers()) {
-				members.add(scimMember.getValue());
+				Member membre = new Member();
+				
+				membre.setValue(scimMember.getValue());
+				membre.setDisplay(scimMember.getDisplay());
+				membre.setType(scimMember.getType());
+
+				members.add(membre);
 			}
 
 		}
@@ -166,7 +184,21 @@ public class ScimGroupEndPoint {
 		return location;
 	}	
 
+	private String location(HttpServletRequest request, String path, String id) throws URISyntaxException {
 		
+		URI url = new URI(request.getRequestURL().toString());
+		
+		ServletServerHttpRequest sshr = new ServletServerHttpRequest(request);
+
+		String location = ForwardedHeaderUtils.adaptFromForwardedHeaders(url, sshr.getHeaders())
+				.replacePath(url.getPath().replace("Groups", path))
+				.path("/" + id)
+				.build()
+				.toUriString();
+		
+		return location;
+	}
+
 
 
 
@@ -207,7 +239,7 @@ public class ScimGroupEndPoint {
 		String location = location(request, group.getId());
 
 		// Conversion de l'object user en scimUser
-		scimGroup = mapper(group, location);
+		scimGroup = mapper(request, group, location);
 		log.info("Demande de création du groupe effectuée: {}", scimGroup);
 
 		// Generation du message de réponse
@@ -248,7 +280,7 @@ public class ScimGroupEndPoint {
 		String location = location(request);		
 
 		// Conversion de l'objet group en scimGroup
-		ScimGroup scimGroup = mapper(group, location);
+		ScimGroup scimGroup = mapper(request, group, location);
 		log.info("Recherche d'un group effectuée : {}", scimGroup);
 					
 		// Generation de la réponse
@@ -299,7 +331,7 @@ public class ScimGroupEndPoint {
 		String location = location(request);
 
 		// Conversion de l'objet user en scimUser
-		scimGroup = mapper(group, location);
+		scimGroup = mapper(request, group, location);
 
 		log.info("Demande de modification du groupe effectuée : {}", scimGroup);
 
@@ -374,7 +406,7 @@ public class ScimGroupEndPoint {
 		List<ScimGroup> resources = new ArrayList<>();
 
 		for (Group group : groups.getGroups()) {
-			resources.add(mapper(group, location(request, group.getId())));
+			resources.add(mapper(request, group, location(request, group.getId())));
 			
 		}
 
