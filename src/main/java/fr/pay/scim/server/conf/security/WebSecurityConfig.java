@@ -46,7 +46,7 @@ public class WebSecurityConfig  {
     
     @Bean
     @Order(value = 40)
-    SecurityFilterChain filterChain40(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChainScim(HttpSecurity http) throws Exception {
 		
 		http
 			.securityMatcher("/scim/v2/**")
@@ -62,9 +62,27 @@ public class WebSecurityConfig  {
     }    
 
     
+	@Bean
+	@Order(value = 90)
+	SecurityFilterChain filterChainSwagger(HttpSecurity http) throws Exception {
+
+		http
+			.securityMatcher("/v3/api-docs/**", "/swagger-ui/**", "/v2/api-docs/**", "/swagger-resources/**")
+				.cors(Customizer.withDefaults())
+				.csrf((csrf) -> csrf.disable())
+				.headers((headers) -> headers.frameOptions((frame) -> frame.disable()))
+				.sessionManagement((sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests
+																	.anyRequest().permitAll())
+				.httpBasic(Customizer.withDefaults());
+
+		return http.build();
+	}
+
+
     @Bean
     @Order(value = 100)
-    SecurityFilterChain filterChain100(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChainDefault(HttpSecurity http) throws Exception {
 		
 		http
 			.securityMatcher("/**")
